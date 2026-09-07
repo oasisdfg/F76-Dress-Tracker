@@ -1,4 +1,4 @@
-# F76 Dress Tracker
+# Fallout 76 Dress Tracker
 
 A small Windows desktop app for counting Fallout 76 asylum worker uniform drops.
 Ten variants, one click each, plus a stopwatch for how long you have been hunting.
