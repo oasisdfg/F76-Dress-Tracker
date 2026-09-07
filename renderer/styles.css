@@ -1,0 +1,286 @@
+:root {
+  --bg: #0d0d0d;
+  --panel: #151515;
+  --panel-hover: #1c1c1c;
+  --panel-pulse: #2e2e2e;
+  --line: #222222;
+  --text: #f2f2f2;
+  --muted: #8a8a8a;
+  --dim: #6a6a6a;
+  --count: #ffffff;
+  --titlebar-h: 36px; /* keep in sync with TITLEBAR_HEIGHT in main.js */
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+  font-size: 14px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  cursor: default;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+input,
+textarea {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* ------------------------------------------------------------- layout -- */
+
+/* Empty strip behind the OS window controls; the whole thing is the drag
+   handle, and it is the same colour as the body so there is no seam. */
+.titlebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--titlebar-h);
+  background: var(--bg);
+  z-index: 10;
+  -webkit-app-region: drag;
+}
+
+/* Spans only the draggable strip, so right-aligning inside it lands the clock
+   just left of the OS caption buttons instead of underneath them. */
+.titlebar-inner {
+  width: env(titlebar-area-width, 100%);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 14px;
+  -webkit-app-region: drag;
+}
+
+.timer {
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.app {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: safe center;
+  padding: calc(var(--titlebar-h) + 24px) 24px 24px;
+}
+
+/* -------------------------------------------------------------- panels -- */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 16px;
+  width: 100%;
+  max-width: 899px; /* 5 x 167 + 4 x 16 gap, so columns are whole pixels */
+  margin: 0 auto;
+}
+
+.grid.is-empty {
+  display: block;
+  text-align: center;
+}
+
+.empty {
+  color: var(--dim);
+  font-size: 13px;
+  padding: 60px 0;
+}
+
+.panel {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 8px 5px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  cursor: pointer;
+}
+
+.panel:hover {
+  background: var(--panel-hover);
+}
+
+.panel.pulse {
+  animation: panel-pulse 120ms ease-out;
+}
+
+@keyframes panel-pulse {
+  from {
+    background-color: var(--panel-pulse);
+  }
+  to {
+    background-color: var(--panel-hover);
+  }
+}
+
+.panel-img {
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+
+.panel-count {
+  flex: 0 0 auto;
+  width: 100%;
+  margin: 2px 0 0;
+  color: var(--count);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: 0.015em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------ actions -- */
+
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 30px;
+}
+
+.action {
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 0;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-indent: 0.14em; /* cancels the trailing letter-space; centred text shifts by half the indent */
+  text-transform: uppercase;
+  padding: 8px 18px;
+  cursor: pointer;
+}
+
+.action:hover {
+  background: var(--panel-hover);
+  color: var(--text);
+}
+
+/* ------------------------------------------------------------ overlay -- */
+
+.overlay {
+  position: fixed;
+  top: var(--titlebar-h);
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.74);
+}
+
+.overlay-box {
+  width: 390px;
+  max-width: calc(100vw - 48px);
+  background: #131313;
+  border: 1px solid var(--line);
+  padding: 14px;
+}
+
+.edit-list {
+  max-height: calc(100vh - var(--titlebar-h) - 110px);
+  overflow-y: auto;
+}
+
+.edit-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.edit-list::-webkit-scrollbar-thumb {
+  background: #2c2c2c;
+}
+
+.edit-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.edit-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 2px;
+}
+
+.edit-row + .edit-row {
+  border-top: 1px solid #1d1d1d;
+}
+
+.edit-icon {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  -webkit-user-drag: none;
+}
+
+.edit-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.edit-count {
+  flex: 0 0 auto;
+  width: 76px;
+  padding: 5px 8px;
+  background: #0f0f0f;
+  border: 1px solid #2a2a2a;
+  border-radius: 0;
+  color: var(--count);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+}
+
+.edit-count:focus {
+  border-color: #454545;
+  background: #151515;
+}
+
+.overlay-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 12px;
+}

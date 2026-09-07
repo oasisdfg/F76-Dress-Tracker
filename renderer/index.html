@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'" />
+  <title>Dress Tracker</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="titlebar">
+    <div class="titlebar-inner">
+      <span class="timer" id="timer">00:00:00</span>
+    </div>
+  </div>
+
+  <main class="app">
+    <section class="grid" id="grid"></section>
+
+    <div class="actions">
+      <button type="button" class="action" id="btn-import">Import</button>
+      <button type="button" class="action" id="btn-reset">Reset</button>
+    </div>
+  </main>
+
+  <div class="overlay" id="overlay" hidden>
+    <div class="overlay-box">
+      <div class="edit-list" id="edit-list"></div>
+      <div class="overlay-actions">
+        <button type="button" class="action" id="btn-apply">Apply</button>
+        <button type="button" class="action" id="btn-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
