@@ -1,0 +1,45 @@
+appId: com.oasisdfg.dresstracker
+productName: Dress Tracker
+copyright: Copyright (c) 2026 oasisdfg
+
+directories:
+  output: dist
+  buildResources: build
+
+files:
+  - "**/*"
+  - "!scripts/**/*"
+  - "!dist/**/*"
+  # Shipped via extraResources below instead; a packaged build always reads
+  # resources/Dressicons, so a second copy inside the asar is dead weight.
+  - "!Dressicons/**/*"
+
+# Ships next to the exe as resources/Dressicons, so PNGs can be swapped
+# after packaging without a rebuild.
+extraResources:
+  - from: Dressicons
+    to: Dressicons
+    filter:
+      - "**/*"
+
+win:
+  icon: build/icon.ico
+  target:
+    - target: portable
+      arch:
+        - x64
+    - target: nsis
+      arch:
+        - x64
+
+portable:
+  artifactName: ${productName} ${version}.${ext}
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Dress Tracker
+  artifactName: ${productName} Setup ${version}.${ext}

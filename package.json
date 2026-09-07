@@ -1,0 +1,22 @@
+{
+  "name": "dress-tracker",
+  "version": "1.0.0",
+  "productName": "Dress Tracker",
+  "private": true,
+  "description": "F76 Dress Tracker",
+  "author": "oasisdfg",
+  "license": "MIT",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "icon": "node scripts/make-icon.js",
+    "predist": "node scripts/make-icon.js",
+    "dist": "electron-builder --win"
+  },
+  "devDependencies": {
+    "electron": "^44.2.0",
+    "electron-builder": "^26.15.3",
+    "png-to-ico": "^3.0.2",
+    "pngjs": "^7.0.0"
+  }
+}
