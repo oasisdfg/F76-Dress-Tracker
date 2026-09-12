@@ -1,23 +1,25 @@
 # Fallout 76 Dress Tracker
 
 A small Windows desktop app for counting Fallout 76 asylum worker uniform drops.
-Ten variants, one click each, plus a stopwatch for how long you have been hunting.
+Ten dress variants plus the tin foil hat, one click each, and a stopwatch for how
+long you have been hunting.
 
 ## Using it
 
 - Left click a dress to add one.
 - Right click to subtract one. It stops at zero.
-- Number keys 1 to 9 and 0 hit the ten panels in grid order.
 - **Import** opens a list of every dress with its current count, so you can type
   numbers in directly. Useful if you have been keeping tallies somewhere else.
 - **Reset** zeroes every count and the timer, behind a confirmation.
 
 The timer starts when the app opens and adds to a running total, so it carries
 across restarts and measures total time spent hunting rather than the current
-session. Reset is the only thing that clears it.
+session. Click it to pause, and again to resume. Reset is the only thing that
+clears it.
 
 Panels run from most common to rarest: weathered, white dirty, white, brown,
-green, blue, pink, yellow, forest, red.
+green, blue, pink, yellow, forest, red. The tin foil hat has its own smaller
+tile under the yellow dress.
 
 ## Where your data lives
 

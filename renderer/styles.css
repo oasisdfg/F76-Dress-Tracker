@@ -72,11 +72,33 @@ textarea {
   -webkit-app-region: drag;
 }
 
+/* Clickable, so it has to opt out of the drag region or a click would start a
+   window drag. The padding widens the hit area; the negative margin keeps the
+   digits where they were. */
 .timer {
+  -webkit-app-region: no-drag;
+  padding: 4px 6px;
+  margin-right: -6px;
   font-size: 12px;
   letter-spacing: 0.1em;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.timer.paused {
+  color: var(--dim);
+  animation: timer-paused 1.6s ease-in-out infinite;
+}
+
+.timer:hover {
+  color: var(--text);
+}
+
+@keyframes timer-paused {
+  50% {
+    opacity: 0.35;
+  }
 }
 
 .app {
@@ -159,6 +181,19 @@ textarea {
   letter-spacing: 0.015em;
   text-align: center;
   font-variant-numeric: tabular-nums;
+}
+
+/* The tin foil hat: a smaller tile in the row under its dress. 101px leaves an
+   even 33px either side inside the 167px column, so it lands on whole pixels. */
+.panel-small {
+  width: 101px;
+  justify-self: center;
+  padding: 5px 5px 3px;
+}
+
+.panel-small .panel-count {
+  margin-top: 1px;
+  font-size: 17px;
 }
 
 /* ------------------------------------------------------------ actions -- */

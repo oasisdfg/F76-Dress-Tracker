@@ -5,9 +5,9 @@ const fs = require('fs');
 const path = require('path');
 
 const WINDOW_WIDTH = 1000;
-const WINDOW_HEIGHT = 600;
+const WINDOW_HEIGHT = 716;
 const MIN_WIDTH = 960; // keeps the 899px grid intact so panels stay whole pixels
-const MIN_HEIGHT = 520;
+const MIN_HEIGHT = 620;
 const BACKGROUND_COLOR = '#0d0d0d';
 const TITLEBAR_HEIGHT = 36; // keep in sync with --titlebar-h in styles.css
 const SAVE_DEBOUNCE_MS = 300;
@@ -49,9 +49,18 @@ const PANEL_ORDER = [
   'reddress'
 ];
 
+// Smaller tiles that sit in the row under one of the dresses instead of taking
+// a slot in the grid. Maps tile id -> the dress it goes under.
+const SMALL_TILES = {
+  tinfoilhat: 'yellowdress'
+};
+
 function orderIndex(id) {
-  const i = PANEL_ORDER.indexOf(id.toLowerCase());
-  return i === -1 ? Number.MAX_SAFE_INTEGER : i;
+  const key = id.toLowerCase();
+  const i = PANEL_ORDER.indexOf(key);
+  if (i !== -1) return i;
+  if (SMALL_TILES[key]) return PANEL_ORDER.length; // straight after the dresses
+  return Number.MAX_SAFE_INTEGER;
 }
 
 // "asylum_worker-dress.png" -> "Asylum Worker Dress"
@@ -65,7 +74,7 @@ function toLabel(basename) {
     .join(' ');
 }
 
-// Returns [{ id, label, dataUrl }] in PANEL_ORDER.
+// Returns [{ id, label, dataUrl, under }] in PANEL_ORDER, small tiles last.
 // A missing or empty folder is not an error: the renderer shows its empty state.
 function readIcons() {
   let entries;
@@ -94,7 +103,8 @@ function readIcons() {
       icons.push({
         id,
         label: toLabel(id),
-        dataUrl: 'data:image/png;base64,' + buffer.toString('base64')
+        dataUrl: 'data:image/png;base64,' + buffer.toString('base64'),
+        under: SMALL_TILES[id.toLowerCase()] || null
       });
     } catch (err) {
       console.warn('[dress-tracker] skipping ' + file + ':', err.message);
@@ -158,6 +168,7 @@ function queueSave(counts) {
 // the system clock changed or DST rolled over, and a stopwatch must not.
 let timerBaseMs = 0;
 let timerOrigin = performance.now();
+let timerPaused = false;
 let timerTicker = null;
 
 function loadTimer() {
@@ -171,7 +182,12 @@ function loadTimer() {
 }
 
 function currentTimerMs() {
+  if (timerPaused) return Math.round(timerBaseMs);
   return Math.round(timerBaseMs + Math.max(0, performance.now() - timerOrigin));
+}
+
+function timerState() {
+  return { elapsedMs: currentTimerMs(), paused: timerPaused };
 }
 
 function writeTimer() {
@@ -190,15 +206,30 @@ function writeTimer() {
 function startTimer() {
   timerBaseMs = loadTimer();
   timerOrigin = performance.now();
+  timerPaused = false; // every launch starts the clock running
   // Flush periodically so a crash or a kill only loses the last few seconds.
   timerTicker = setInterval(writeTimer, TIMER_SAVE_MS);
+}
+
+// Clicking the clock. Pausing banks the running time into the base, so the
+// frozen value is exactly what gets written to disk.
+function toggleTimer() {
+  if (timerPaused) {
+    timerOrigin = performance.now();
+    timerPaused = false;
+  } else {
+    timerBaseMs = currentTimerMs();
+    timerPaused = true;
+  }
+  writeTimer();
+  return timerState();
 }
 
 function resetTimer() {
   timerBaseMs = 0;
   timerOrigin = performance.now();
   writeTimer();
-  return 0;
+  return timerState();
 }
 
 /* --------------------------------------------------------------- window -- */
@@ -257,7 +288,8 @@ ipcMain.handle('counts:save', (_event, counts) => {
   queueSave(counts);
   return true;
 });
-ipcMain.handle('timer:get', () => currentTimerMs());
+ipcMain.handle('timer:get', () => timerState());
+ipcMain.handle('timer:toggle', () => toggleTimer());
 ipcMain.handle('timer:reset', () => resetTimer());
 
 /* ----------------------------------------------------------- lifecycle -- */

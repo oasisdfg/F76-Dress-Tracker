@@ -1,8 +1,6 @@
 'use strict';
 
 const MAX_COUNT = 999999;
-// '1'..'9' hit panels 1-9, '0' hits panel 10.
-const KEY_ORDER = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
 
 const gridEl = document.getElementById('grid');
 const overlayEl = document.getElementById('overlay');
@@ -11,13 +9,14 @@ const timerEl = document.getElementById('timer');
 
 let icons = [];
 let counts = {};
-const panels = []; // grid order: { id, root, count }
-const editRows = []; // one editor row per dress: { id, input }
+const panels = []; // grid order: { id, root, count, under }
+const editRows = []; // one editor row per tile: { id, input }
 
 // Total hunting time. Main owns the real value; the renderer takes it once at
 // boot and extrapolates locally so it is not doing IPC every second.
 let timerBaseMs = 0;
 let timerOrigin = performance.now();
+let timerPaused = false;
 
 /* ------------------------------------------------------------- helpers -- */
 
@@ -55,7 +54,26 @@ function formatDuration(ms) {
 
 // Recomputed from the origin each tick, so a throttled interval cannot drift.
 function tickTimer() {
-  timerEl.textContent = formatDuration(timerBaseMs + (performance.now() - timerOrigin));
+  const running = timerPaused ? 0 : performance.now() - timerOrigin;
+  timerEl.textContent = formatDuration(timerBaseMs + running);
+}
+
+// Every timer call to main returns { elapsedMs, paused }; this resyncs to it.
+function applyTimerState(state) {
+  timerBaseMs = Number(state && state.elapsedMs) || 0;
+  timerPaused = Boolean(state && state.paused);
+  timerOrigin = performance.now();
+  timerEl.classList.toggle('paused', timerPaused);
+  timerEl.title = timerPaused ? 'Paused, click to resume' : 'Click to pause';
+  tickTimer();
+}
+
+async function toggleTimer() {
+  try {
+    applyTimerState(await window.api.toggleTimer());
+  } catch (err) {
+    console.error('toggleTimer failed:', err);
+  }
 }
 
 /* -------------------------------------------------------------- counts -- */
@@ -89,7 +107,7 @@ function renderEmpty() {
 
 function buildPanel(icon) {
   const root = document.createElement('div');
-  root.className = 'panel';
+  root.className = icon.under ? 'panel panel-small' : 'panel';
 
   const img = document.createElement('img');
   img.className = 'panel-img';
@@ -109,12 +127,31 @@ function buildPanel(icon) {
   root.addEventListener('contextmenu', () => bump(icon.id, -1));
 
   gridEl.appendChild(root);
-  panels.push({ id: icon.id, root, count });
+  panels.push({ id: icon.id, root, count, under: icon.under || null });
+}
+
+// Small tiles go in the row directly below their dress. Placing them explicitly
+// means the auto-placed dresses flow around that cell rather than into it.
+function placeSmallTiles() {
+  const columns = getComputedStyle(gridEl).gridTemplateColumns.split(' ').length;
+  const dresses = panels.filter((p) => !p.under);
+
+  for (const tile of panels.filter((p) => p.under)) {
+    const index = dresses.findIndex((p) => p.id === tile.under);
+    if (index === -1) {
+      // Its dress is missing, so centre it under the last row instead.
+      tile.root.style.gridColumn = String(Math.ceil(columns / 2));
+      tile.root.style.gridRow = String(Math.floor((dresses.length - 1) / columns) + 2);
+    } else {
+      tile.root.style.gridColumn = String((index % columns) + 1);
+      tile.root.style.gridRow = String(Math.floor(index / columns) + 2);
+    }
+  }
 }
 
 /* ------------------------------------------------------ import / reset -- */
 
-// One row per dress: icon, name, and an editable count.
+// One row per tile: icon, name, and an editable count.
 function buildEditRow(icon) {
   const row = document.createElement('div');
   row.className = 'edit-row';
@@ -185,13 +222,10 @@ async function resetCounts() {
 
   // The timer only ever resets here.
   try {
-    timerBaseMs = await window.api.resetTimer();
+    applyTimerState(await window.api.resetTimer());
   } catch (err) {
     console.error('resetTimer failed:', err);
-    timerBaseMs = 0;
   }
-  timerOrigin = performance.now();
-  tickTimer();
 }
 
 /* -------------------------------------------------------------- wiring -- */
@@ -203,6 +237,7 @@ function wire() {
   document.getElementById('btn-reset').addEventListener('click', resetCounts);
   document.getElementById('btn-apply').addEventListener('click', applyImport);
   document.getElementById('btn-cancel').addEventListener('click', closeImport);
+  timerEl.addEventListener('click', toggleTimer);
 
   editListEl.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') {
@@ -212,17 +247,7 @@ function wire() {
   });
 
   document.addEventListener('keydown', (event) => {
-    if (!overlayEl.hidden) {
-      if (event.key === 'Escape') closeImport();
-      return;
-    }
-    if (event.ctrlKey || event.altKey || event.metaKey) return;
-
-    const index = KEY_ORDER.indexOf(event.key);
-    if (index === -1 || index >= panels.length) return;
-
-    event.preventDefault();
-    bump(panels[index].id, 1);
+    if (event.key === 'Escape' && !overlayEl.hidden) closeImport();
   });
 }
 
@@ -237,13 +262,11 @@ async function boot() {
   }
 
   try {
-    timerBaseMs = await window.api.getTimer();
+    applyTimerState(await window.api.getTimer());
   } catch (err) {
     console.error('getTimer failed:', err);
-    timerBaseMs = 0;
+    applyTimerState({ elapsedMs: 0, paused: false });
   }
-  timerOrigin = performance.now();
-  tickTimer();
   setInterval(tickTimer, 1000);
 
   try {
@@ -264,6 +287,7 @@ async function boot() {
     buildPanel(icon);
     buildEditRow(icon);
   }
+  placeSmallTiles();
 }
 
 boot();
